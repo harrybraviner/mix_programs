@@ -1,0 +1,67 @@
+* Example program P from 1.3.2 of Knuth Volume 1
+*
+L           EQU     500         Number of primes to find
+PRINTER     EQU     18          Unit number for the line printer
+PRIME       EQU     -1          Memory address for table of primes
+* Note: the reason for the buffers being of size 25 is that when the line printer
+* is called it will output 120 characters. Each character occupies one byte in
+* a 5 byte word in memory. Hence the buffer is 24 words long for the output, plus
+* one final word to hold the address of the other buffer to write into.
+BUF0        EQU     2000        Memory address for BUFFER[0]
+BUF1        EQU     BUF0+25     Memory address for BUFFER[1]
+            ORIG    3000
+START       IOC     0(PRINTER)
+            LD1     =1-L=       rI1 = J - L
+            LD2     =3=         rI2 = N
+2H          INC1    1           P2: N is prime. Increment J.
+            ST2     PRIME+L,1   PRIME + L + rI1 = PRIME + J. Save N to here.
+            J1Z     2F          If found L primes, goto the printing instructions.
+4H          INC2    2           N <- N + 2
+            ENT3    2           K <- 2. PRIME[K] will be the candidate divisor.
+6H          ENTA    0           rAX <- N
+            ENTX    0,2         rAX <- N
+            DIV     PRIME,3     rA <- Q, rX <- R
+            JXZ     4B          If R = 0 go to N += 1 step.
+            CMPA    PRIME,3     
+            INC3    1           K <- K + 1
+            JG      6B          Jump if Q > PRIME[K] (since N may still be prime)
+            JMP     2B          If we get here, N is prime
+2H          OUT     TITLE(PRINTER)  Print the title
+            ENT4    BUF1+11     Set B <- 1
+            ENT5    -50         Set M <- 0
+2H          INC5    L+1         Advance M
+4H          LDA     PRIME,5
+            CHAR                * Convert PRIME[M] in rA to decimal.
+            STX     0,4(1:4)
+            DEC4    1
+            DEC5    50          Keep decrementing rI5 until it becomes non-positive.
+            J5P     4B
+* Write the number of the prime into the buffer
+            ENTA    50,5        Get index of left-most prime written on this row
+            CHAR
+            STX     0,4(2:3)    Store the number (shifted)
+            ENTX    54          ':' character
+            STX     0,4(4:4)
+            DEC4    1
+            OUT     0,4(PRINTER)    Print one line
+            LD4     24,4        Switch buffers
+            J5N     2B
+            HLT
+* Initial contents of tables and buffers
+            ORIG    PRIME+1
+            CON     2
+            ORIG    BUF0-5
+TITLE       ALF     "FIRST"
+            ALF     " FIVE"
+            ALF     " HUND"
+            ALF     "RED P"
+            ALF     "RIMES"
+            ORIG    BUF0
+            ALF     "PRIME"
+            ORIG    BUF1
+            ALF     "PRIME"
+            ORIG    BUF0+24
+            CON     BUF1+11
+            ORIG    BUF1+24
+            CON     BUF0+11
+            END     START
