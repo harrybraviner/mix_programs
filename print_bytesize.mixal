@@ -1,0 +1,14 @@
+* Prints the byte size of the mix machine this is being run on.
+BYTESIZE    EQU     1(4:4)
+TITLE       EQU     1000
+PRINTER     EQU     18
+            ORIG    3000
+START       IOC     0(PRINTER)      Fresh printer page
+            ENTA    BYTESIZE
+            CHAR
+            STX     TITLE+3
+            OUT     TITLE(PRINTER)
+            ORIG    TITLE
+            ALF     "BYTE "
+            ALF     "SIZE:"
+            END     START
