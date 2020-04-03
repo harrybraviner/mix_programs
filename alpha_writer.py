@@ -72,6 +72,16 @@ def convert_alf_to_word(word_as_str):
         acc += char_lookup_dict[ch]
     return acc
 
+def convert_word_to_alf(word_as_int):
+    acc = []
+    for i in range(5):
+        acc.append(mix_chars[word_as_int % 64])
+        word_as_int >>= 6
+    if word_as_int % 2 != 0:
+        print('Found a negative sign bit. This isn\'t normal for alpha numeric data')
+    acc.reverse()
+    return ''.join(acc)
+
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser()
@@ -109,4 +119,24 @@ if __name__ == '__main__':
             for word in words:
                 f.write(word.to_bytes(length=4, byteorder='big'))
     elif args.mode == 'read':
-        raise NotImplementedError
+
+        with open(filename, 'rb') as f:
+            file_as_bytes = f.read()
+        if len(file_as_bytes) != 400:
+            print('Warning: File on disk was {} bytes long, expected 400 for a mix tape')
+        
+        if args.skip_blanks:
+            trunc_count = 0
+            while len(file_as_bytes) > 0:
+                last_word = file_as_bytes[-4:]
+                if last_word == b'\x00\x00\x00\x00':
+                    file_as_bytes = file_as_bytes[:-4]
+                    trunc_count += 1
+                else:
+                    break
+            print('Truncated {} blank words from end of file.'.format(trunc_count))
+
+        for i in range(len(file_as_bytes)//4):
+            x = int.from_bytes(file_as_bytes[4*i:4*i+4], byteorder='big')
+            print(convert_word_to_alf(x))
+
